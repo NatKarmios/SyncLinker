@@ -1,0 +1,15 @@
+[package]
+name = "sync_linker"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.14", features = ["derive"] }
+lazy_static = "1.5.0"
+notify = "6.1.1"
+serde = { version = "1.0.205", features = ["derive"] }
+serde_yaml = "0.9.34"
+symlink = "0.1.0"

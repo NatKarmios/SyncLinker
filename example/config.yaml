@@ -1,0 +1,7 @@
+settings:
+
+folders:
+  "./out":
+    inputs:
+      - "./in1"
+      - "./in2"
