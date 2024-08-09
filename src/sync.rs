@@ -1,6 +1,6 @@
-use std::{fs, path::Path};
+use std::{fs, path::{Path, absolute }};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 
 use crate::ctx::ARGS;
 
@@ -8,20 +8,23 @@ use crate::ctx::ARGS;
 ///
 /// Errors if paths are invalid, or if a non-symlink would be overwritten
 pub fn sync(from: &Path, to: &Path) -> Result<()> {
-  let read_dir = fs::read_dir(from).with_context(|| format!("Couldn't read {}", from.display()))?;
+  let read_dir = fs::read_dir(from)?;
   for file in read_dir {
-    let source = file.with_context(|| format!("IO error while reading {}" , from.display()))?;
-    let dest: Box<Path> = to.join(source.file_name()).into();
+    let source_file = file?;
+    let source_rel = source_file.path();
+    let source = absolute(&source_rel)?;
+    let dest_rel = to.join(source_file.file_name());
+    let dest = absolute(&dest_rel)?;
     let (should_delete, should_link) = match (dest.exists(), dest.is_symlink()) {
       (true, false) => {
         // Non-symlink file
-        eprintln!("WARNING: '{}' exists and is not a symlink", dest.display());
+        eprintln!("WARNING: '{}' exists and is not a symlink", dest_rel.display());
         (false, false)
       },
       (true, true) => {
         // Existing symlink
-        let link = dest.read_link().with_context(|| format!("Couldn't read link {}", dest.display()))?;
-        if link == source.path() {
+        let link = dest.read_link()?;
+        if link == source {
           // Skip
           (false, false)
         } else {
@@ -33,11 +36,11 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
       (false, false) => (false, true),  // No file
     };
     if should_delete {
-      fs::remove_file(&dest).with_context(|| format!("Couldn't remove {}", dest.display()))?;
+      fs::remove_file(&dest)?;
     }
     if should_link {
-      symlink::symlink_auto(&source.path(), &dest).with_context(|| format!("Couldn't symlink {} to {}", source.path().display(), dest.display()))?;
-      if !ARGS.quiet { println!("'{}' -> '{}'", source.path().display(), dest.display()) }
+      if !ARGS.quiet { println!("{} -> {}", source_rel.display(), dest_rel.display()) }
+      symlink::symlink_auto(&source, &dest)?;
     }
   }
   Ok(())
@@ -45,13 +48,13 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
 
 /// Removes dead symlinks in `path`
 pub fn clean(path: &Path) -> Result<()> {
-  let read_dir = fs::read_dir(path).with_context(|| format!("Couldn't read {}", path.display()))?;
+  let read_dir = fs::read_dir(path)?;
   for file in read_dir {
-    let file = file.with_context(|| format!("IO error while reading {}" , path.display()))?;
+    let file = file?;
     let path: Box<Path> = file.path().into();
     if !path.exists() {
-      fs::remove_file(&path).with_context(|| format!("Couldn't remove {}", path.display()))?;
-      if !ARGS.quiet { println!("Removing '{}'", path.display()) }
+      if !ARGS.quiet { println!("Removing {}", path.display()) }
+      fs::remove_file(&path)?;
     }
   };
   Ok(())
