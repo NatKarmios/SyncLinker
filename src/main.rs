@@ -61,7 +61,8 @@ fn start_watch() -> Result<Vec<Box<dyn Watcher>>> {
 fn run() -> Result<()> {
   initial_sync()?;
   if !ARGS.once {
-    start_watch()?;
+    // Naming watchers, as they get killed if they're dropped
+    let _watchers = start_watch()?;
     loop {
       std::thread::park();
     }
