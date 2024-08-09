@@ -1,4 +1,4 @@
-use std::{fs, path::{Path, absolute }};
+use std::{ fs::{ self, canonicalize }, path::Path };
 
 use anyhow::Result;
 
@@ -20,9 +20,9 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
   for file in read_dir {
     let source_file = file?;
     let source_rel = source_file.path();
-    let source = absolute(&source_rel)?;
+    let source = canonicalize(&source_rel)?;
     let dest_rel = to.join(source_file.file_name());
-    let dest = absolute(&dest_rel)?;
+    let dest = canonicalize(&dest_rel)?;
     let (should_delete, should_link) = match (dest.exists(), dest.is_symlink()) {
       (true, false) => {
         // Non-symlink file
