@@ -4,6 +4,14 @@ use anyhow::Result;
 
 use crate::ctx::ARGS;
 
+macro_rules! log {
+  ($($tts:tt)*) => {
+    if !ARGS.quiet {
+      println!("{}{}", if ARGS.dry_run { "[DRY RUN] " } else { "" }, format!($($tts)*));
+    };
+  }
+}
+
 /// Symlinks everything in `from` in `to`
 ///
 /// Errors if paths are invalid, or if a non-symlink would be overwritten
@@ -36,11 +44,11 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
       (false, false) => (false, true),  // No file
     };
     if should_delete {
-      fs::remove_file(&dest)?;
+      if !ARGS.dry_run { fs::remove_file(&dest)? };
     }
     if should_link {
-      if !ARGS.quiet { println!("{} -> {}", source_rel.display(), dest_rel.display()) }
-      symlink::symlink_auto(&source, &dest)?;
+      log!("{} -> {}", source_rel.display(), dest_rel.display());
+      if !ARGS.dry_run { symlink::symlink_auto(&source, &dest)? };
     }
   }
   Ok(())
@@ -53,8 +61,8 @@ pub fn clean(path: &Path) -> Result<()> {
     let file = file?;
     let path: Box<Path> = file.path().into();
     if !path.exists() {
-      if !ARGS.quiet { println!("Removing {}", path.display()) }
-      fs::remove_file(&path)?;
+      log!("Removing {}", path.display());
+      if !ARGS.dry_run { fs::remove_file(&path)? };
     }
   };
   Ok(())
