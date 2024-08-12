@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 use crate::ctx::ARGS;
 
@@ -19,13 +19,16 @@ macro_rules! log {
 ///
 /// Errors if paths are invalid, or if a non-symlink would be overwritten
 pub fn sync(from: &Path, to: &Path) -> Result<()> {
-    let read_dir = fs::read_dir(from)?;
+    let read_dir =
+        fs::read_dir(from).with_context(|| format!("Couldn't read directory {from:?}"))?;
     for file in read_dir {
         let source_file = file?;
         let source_rel = source_file.path();
-        let source = canonicalize(&source_rel)?;
+        let source = canonicalize(&source_rel)
+            .with_context(|| format!("Couldn't get true path of {source_rel:?}"))?;
         let dest_rel = to.join(source_file.file_name());
-        let dest = canonicalize(&dest_rel)?;
+        let dest = canonicalize(&dest_rel)
+            .with_context(|| format!("Couldn't get true path of {dest_rel:?}"))?;
         let (should_delete, should_link) = match (dest.exists(), dest.is_symlink()) {
             (true, false) => {
                 // Non-symlink file
@@ -37,7 +40,9 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
             }
             (true, true) => {
                 // Existing symlink
-                let link = dest.read_link()?;
+                let link = dest
+                    .read_link()
+                    .with_context(|| format!("Couldn't read link {dest:?}"))?;
                 if link == source {
                     // Skip
                     (false, false)
@@ -64,7 +69,7 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
 
 /// Removes dead symlinks in `path`
 pub fn clean(path: &Path) -> Result<()> {
-    let read_dir = fs::read_dir(path)?;
+    let read_dir = fs::read_dir(path).with_context(|| format!("Couldn't read link {path:?}"))?;
     for file in read_dir {
         let file = file?;
         let path: Box<Path> = file.path().into();

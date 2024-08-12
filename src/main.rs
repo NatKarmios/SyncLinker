@@ -48,8 +48,10 @@ fn start_watch() -> Result<Vec<Box<dyn Watcher>>> {
             let mut watcher = notify::recommended_watcher(|r: notify::Result<notify::Event>| {
                 on_watch_event(r, from, to)
             })
-            .with_context(|| format!("Couldn't create watcher for {}", from.display()))?;
-            watcher.watch(from, notify::RecursiveMode::NonRecursive)?;
+            .with_context(|| format!("Couldn't create watcher for {from:?}"))?;
+            watcher
+                .watch(from, notify::RecursiveMode::NonRecursive)
+                .with_context(|| format!("Couldn't create watcher for {from:?}"))?;
             watchers.push(Box::new(watcher) as Box<dyn Watcher>);
         }
     }

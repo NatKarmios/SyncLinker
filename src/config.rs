@@ -15,11 +15,10 @@ pub struct Config {
 
 impl Config {
     pub fn load(path: &Path) -> Result<Self> {
-        let path = std::fs::canonicalize(path)?;
-        let file =
-            File::open(&path).with_context(|| format!("Couldn't open {}", path.display()))?;
+        let path = std::fs::canonicalize(path)
+            .with_context(|| format!("Couldn't get true path of {path:?}"))?;
+        let file = File::open(&path).with_context(|| format!("Couldn't open {path:?}"))?;
         let reader = BufReader::new(file);
-        serde_yaml::from_reader(reader)
-            .with_context(|| format!("Failed to parse {}", path.display()))
+        serde_yaml::from_reader(reader).with_context(|| format!("Failed to parse {path:?}"))
     }
 }
