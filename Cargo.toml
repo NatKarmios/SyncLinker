@@ -11,3 +11,4 @@ notify = "6.1.1"
 serde = { version = "1.0.205", features = ["derive"] }
 serde_yaml = "0.9.34"
 symlink = "0.1.0"
+tilde-expand = "0.1.1"
