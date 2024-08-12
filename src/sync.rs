@@ -27,8 +27,9 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
         let source = canonicalize(&source_rel)
             .with_context(|| format!("Couldn't get true path of {source_rel:?}"))?;
         let dest_rel = to.join(source_file.file_name());
-        let dest = canonicalize(&dest_rel)
-            .with_context(|| format!("Couldn't get true path of {dest_rel:?}"))?;
+        let dest = canonicalize(to)
+            .with_context(|| format!("Couldn't get true path of {dest_rel:?}"))?
+            .join(source_file.file_name());
         let (should_delete, should_link) = match (dest.exists(), dest.is_symlink()) {
             (true, false) => {
                 // Non-symlink file
@@ -69,7 +70,8 @@ pub fn sync(from: &Path, to: &Path) -> Result<()> {
 
 /// Removes dead symlinks in `path`
 pub fn clean(path: &Path) -> Result<()> {
-    let read_dir = fs::read_dir(path).with_context(|| format!("Couldn't read link {path:?}"))?;
+    let path = canonicalize(path).with_context(|| format!("Couldn't get true path of {path:?}"))?;
+    let read_dir = fs::read_dir(&path).with_context(|| format!("Couldn't read dir {path:?}"))?;
     for file in read_dir {
         let file = file?;
         let path: Box<Path> = file.path().into();
