@@ -1,5 +1,9 @@
 settings:
+  # What should happen if a folder is missing?
+  # Possible values: retry, ignore, warn, error
   on_missing: retry
+
+  # If on_missing is 'retry', how many seconds should pass between attempts?
   retry_delay: 5
 
 folders:

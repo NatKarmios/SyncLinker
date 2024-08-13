@@ -12,15 +12,18 @@ Merges & syncs folders via symlinks
 Usage: sync_linker [OPTIONS]
 
 Options:
-  -q, --quiet            Quiet mode
-  -d, --dry-run          Dry run
-  -o, --once             Don't watch folders, only run once
-      --config <CONFIG>  Config file location [default: ./config.yaml]
-  -h, --help             Print help
+  -l, --log-level <LOG_LEVEL>  [default: info] [possible values: off, error, warn, info, debug, trace]
+  -d, --dry-run                
+  -o, --once                   Don't watch folders, only run once
+      --config <CONFIG>        Config file location [default: ./config.yaml]
+  -h, --help                   Print help
 ```
 
+## Configuration
+See [./example/config.yaml](/example/config.yaml)
+
 ## Example
-See `/example`:
+See [./example](/example):
 ```
 in1/
   a
