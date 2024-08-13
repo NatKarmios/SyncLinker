@@ -1,7 +1,10 @@
 settings:
+  on_missing: retry
+  retry_delay: 5
 
 folders:
   "./out":
     inputs:
       - "./in1"
       - "./in2"
+      - "./in3"
