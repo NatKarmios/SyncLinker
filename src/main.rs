@@ -84,10 +84,15 @@ fn wait_and_get_dirs(from_s: &str, to_s: &str, settings: &Settings) -> Option<(P
 }
 
 fn are_dirs_real<P: AsRef<Path>>(from: P, to: P, settings: &Settings) -> bool {
+    let mut error_logged = false;
     loop {
         match (check_dir(&from), check_dir(&to)) {
             (Ok(()), Ok(())) => return true,
             (Err(e), _) | (_, Err(e)) => {
+                if !error_logged {
+                    log::info!("{e}");
+                    error_logged = true;
+                }
                 if !should_retry(&e, settings) {
                     return false;
                 }
