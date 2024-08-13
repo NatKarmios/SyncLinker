@@ -8,6 +8,7 @@ use anyhow::{Context, Result};
 use config::{OnMissing, Settings};
 use ctx::{ARGS, CONFIG};
 use notify::{event::EventKind, Watcher};
+use simplelog::SimpleLogger;
 use std::{
     path::{Path, PathBuf},
     sync::mpsc::{Receiver, Sender},
@@ -30,7 +31,7 @@ fn on_watch_event(r: notify::Result<notify::Event>, snd: &Sender<()>) {
             }
             _ => (),
         },
-        Err(e) => eprintln!("Watch error: {:?}", e),
+        Err(e) => log::error!("Watch error: {:?}", e),
     };
 }
 
@@ -52,12 +53,12 @@ fn should_retry(e: &anyhow::Error, settings: &Settings) -> bool {
     match settings.on_missing {
         OnMissing::Error => panic!("{e}"),
         OnMissing::Warn => {
-            eprintln!("Warning: {e}");
+            log::warn!("{e}");
             false
         }
         OnMissing::Ignore => false,
         OnMissing::Retry => {
-            eprintln!("{e}; retrying in {} seconds", settings.retry_delay);
+            log::trace!("{e}; retrying in {} seconds", settings.retry_delay);
             thread::sleep(std::time::Duration::from_secs(settings.retry_delay));
             true
         }
@@ -65,10 +66,15 @@ fn should_retry(e: &anyhow::Error, settings: &Settings) -> bool {
 }
 
 fn wait_and_get_dirs(from_s: &str, to_s: &str, settings: &Settings) -> Option<(PathBuf, PathBuf)> {
+    let mut error_logged = false;
     loop {
         match (get_dir(from_s), get_dir(to_s)) {
             (Ok(from), Ok(to)) => return Some((from, to)),
             (Err(e), _) | (_, Err(e)) => {
+                if !error_logged {
+                    log::info!("{e}");
+                    error_logged = true;
+                }
                 if !should_retry(&e, settings) {
                     return None;
                 }
@@ -95,6 +101,7 @@ fn watch_dir(from_s: &str, to_s: &str, settings: &Settings) -> JoinHandle<()> {
     let to_s = to_s.to_owned();
     let settings = settings.clone();
     thread::spawn(move || {
+        log::trace!("Running initial sync for {from_s} -> {to_s}...");
         let (from, to) = match wait_and_get_dirs(&from_s, &to_s, &settings) {
             Some(ps) => ps,
             None => return,
@@ -108,6 +115,7 @@ fn watch_dir(from_s: &str, to_s: &str, settings: &Settings) -> JoinHandle<()> {
                 return;
             };
             let (_w, rcv) = get_watcher(&from).unwrap();
+            log::info!("Watching {from_s} for changes");
             for () in rcv.iter() {
                 if !from.is_dir() || !to.is_dir() {
                     break;
@@ -129,17 +137,19 @@ fn start_watches() -> Vec<JoinHandle<()>> {
     threads
 }
 
-fn run() -> Result<()> {
+fn main() {
+    {
+        let log_level = ARGS.log_level.to_level_filter();
+        SimpleLogger::init(log_level, simplelog::Config::default()).unwrap();
+    }
+    log::set_max_level(ARGS.log_level.to_level_filter());
+    log::info!(
+        "==== {} version {} ====",
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_VERSION")
+    );
     let threads = start_watches();
     for thread in threads {
         thread.join().unwrap();
-    }
-    Ok(())
-}
-
-fn main() {
-    match run() {
-        Ok(()) => (),
-        Err(e) => eprintln!("Error: {}", e),
     }
 }

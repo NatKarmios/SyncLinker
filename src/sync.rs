@@ -7,11 +7,9 @@ use anyhow::{Context, Result};
 
 use crate::ctx::ARGS;
 
-macro_rules! log {
+macro_rules! log_change {
   ($($tts:tt)*) => {
-    if !ARGS.quiet {
-      println!("{}{}", if ARGS.dry_run { "[DRY RUN] " } else { "" }, format!($($tts)*));
-    };
+    log::info!("{}{}", if ARGS.dry_run { "(dry run) " } else { "" }, format!($($tts)*));
   }
 }
 
@@ -30,7 +28,7 @@ pub fn sync<P: AsRef<Path>>(from: P, to: P) -> Result<()> {
         let (should_delete, should_link) = match (dest.exists(), dest.is_symlink()) {
             (true, false) => {
                 // Non-symlink file
-                eprintln!("WARNING: '{dest:?}' exists and is not a symlink");
+                log::warn!("'{dest:?}' exists and is not a symlink");
                 (false, false)
             }
             (true, true) => {
@@ -53,7 +51,7 @@ pub fn sync<P: AsRef<Path>>(from: P, to: P) -> Result<()> {
             fs::remove_file(&dest)?
         }
         if should_link {
-            log!("{source:?} -> {dest:?}");
+            log_change!("{source:?} -> {dest:?}");
             if !ARGS.dry_run {
                 symlink::symlink_auto(&source, &dest)?
             };
@@ -71,7 +69,7 @@ pub fn clean<P: AsRef<Path>>(path: P) -> Result<()> {
         let file = file?;
         let path: Box<Path> = file.path().into();
         if !path.exists() {
-            log!("Removing {}", path.display());
+            log_change!("Removing {}", path.display());
             if !ARGS.dry_run {
                 fs::remove_file(&path)?
             };

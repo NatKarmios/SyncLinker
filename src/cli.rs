@@ -1,14 +1,44 @@
-use clap::Parser;
+use std::fmt::Display;
+
+use clap::{Parser, ValueEnum};
+use log::LevelFilter;
+
+#[derive(Clone, Debug, ValueEnum)]
+pub enum LogLevel {
+    Off,
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl LogLevel {
+    pub fn to_level_filter(&self) -> LevelFilter {
+        match self {
+            LogLevel::Off => LevelFilter::Off,
+            LogLevel::Error => LevelFilter::Error,
+            LogLevel::Warn => LevelFilter::Warn,
+            LogLevel::Info => LevelFilter::Info,
+            LogLevel::Debug => LevelFilter::Debug,
+            LogLevel::Trace => LevelFilter::Trace,
+        }
+    }
+}
+
+impl Display for LogLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{self:?}").to_lowercase())
+    }
+}
 
 /// Merges & syncs folders via symlinks
 #[derive(Parser)]
 #[command(about)]
 pub struct Args {
-    /// Quiet mode
-    #[arg(short, long, default_value_t = false)]
-    pub quiet: bool,
+    #[arg(short, long, default_value_t = LogLevel::Info)]
+    pub log_level: LogLevel,
 
-    /// Dry run
     #[arg(short, long, default_value_t = false)]
     pub dry_run: bool,
 

@@ -7,8 +7,10 @@ edition = "2021"
 anyhow = "1.0.86"
 clap = { version = "4.5.14", features = ["derive"] }
 lazy_static = "1.5.0"
+log = "0.4.22"
 notify = "6.1.1"
 serde = { version = "1.0.205", features = ["derive"] }
 serde_yaml = "0.9.34"
+simplelog = "0.12.2"
 symlink = "0.1.0"
 tilde-expand = "0.1.1"
