@@ -6,6 +6,11 @@ settings:
   # If on_missing is 'retry', how many seconds should pass between attempts?
   retry_delay: 5
 
+  # [Optional] Interval to check that watched directories still exist
+  # This is because of a bug with notify:
+  # https://github.com/notify-rs/notify/issues/627
+  liveness_interval: 10
+
 folders:
   "./out":
     inputs:

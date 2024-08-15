@@ -16,12 +16,14 @@ pub enum OnMissing {
 pub struct PartialSettings {
     pub on_missing: Option<OnMissing>,
     pub retry_delay: Option<u64>,
+    pub liveness_interval: Option<u64>,
 }
 
 #[derive(Deserialize, Clone)]
 pub struct Settings {
     pub on_missing: OnMissing,
     pub retry_delay: u64,
+    pub liveness_interval: Option<u64>,
 }
 
 impl Settings {
@@ -31,6 +33,7 @@ impl Settings {
             Some(partial) => Self {
                 on_missing: partial.on_missing.unwrap_or(self.on_missing),
                 retry_delay: partial.retry_delay.unwrap_or(self.retry_delay),
+                liveness_interval: partial.liveness_interval.or(self.liveness_interval),
             },
         }
     }
